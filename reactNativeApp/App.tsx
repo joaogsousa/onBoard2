@@ -1,6 +1,14 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import {Input , Button, Header, Text } from 'react-native-elements';
+import ApolloClient from 'apollo-boost';
+import { gql } from "apollo-boost";
+import {ApolloProvider} from 'react-apollo';
+
+const client = new ApolloClient({
+  uri: "https://tq-template-server-sample.herokuapp.com/graphql ",
+});
+
 
 export default class App extends React.Component {
   constructor(props){
@@ -10,7 +18,9 @@ export default class App extends React.Component {
       password: "",
       errorEmail: "",
       errorPass: "",
-    }
+      token: "",
+      page: 0,
+    }    
   }
 
   verifyPass(pass){
@@ -26,13 +36,18 @@ export default class App extends React.Component {
     return false;
   }
 
+  validateEmail(email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+  }
+
   verifyEmail(email){
-    const emailRegex = '/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/'; // Add email regex
+    const emailRegex = '^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'; // Add email regex
     return email && email.match(emailRegex);
   }
   
   handleSubmit(){
-    if(!this.verifyEmail(this.state.email)){
+    if(!this.validateEmail(this.state.email)){
       this.setState({errorEmail: "Invalid e-mail"});
     }else{
       this.setState({errorEmail: ""});
@@ -43,38 +58,120 @@ export default class App extends React.Component {
     }else{
       this.setState({errorPass: ""});
     }
+
+    
+
+    const myQuery = gql`
+      mutation {
+        Login(data: {
+          email: "${this.state.email}"
+          password: "${this.state.password}"
+          rememberMe: true
+        }){
+          user{
+            id
+            name
+            cpf
+            birthDate
+            email
+            role
+          }
+          token
+        }
+      }
+    `;
+    let loginResult;
+    if(this.validateEmail(this.state.email) && this.verifyPass(this.state.password)){
+      client.mutate({
+        mutation: myQuery,
+      }).then(result => {
+          // console.log("token" + result.data.Login.token);
+          loginResult = result;
+          this.setState({
+          token: loginResult.data.Login.token,
+          activeUser: loginResult,
+          page: 1,
+        });      
+
+      }).catch(error => {
+        // console.log("erro do login mutate");
+        // console.log(error);
+
+        this.setState({
+          email: "",
+          password: "",
+          page: 0,
+          errorEmail: "Invalid user authentication",
+          errorPass: "Invalid user authentication",
+        }); 
+
+      });
+    }
   }
 
   render(){
-    return(
-      <View style={styles.container}>
-        <Header
-          leftComponent={{ icon: 'menu', color: '#fff' }}
-          centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
-          rightComponent={{ icon: 'home', color: '#fff' }}
-        />
+    switch(this.state.page){
+      case 0:
+          return(
+            <ApolloProvider client = {client}>
+              <View style={styles.container}>
+                <Header
+                  leftComponent={{ icon: 'menu', color: '#fff' }}
+                  centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
+                  rightComponent={{ icon: 'home', color: '#fff' }}
+                />
+      
+                <View style={styles.view1}>
+      
+                </View>
+      
+                <View style={styles.view2}>
+      
+                  <Text style = {styles.taqText}> Bem-vindo a Taqtile! </Text>
+      
+                  <Input style = {styles.inputs} label='e-mail' onChangeText = {(text) => this.setState({email: text})} 
+                  errorMessage = {this.state.errorEmail}
+                  />
+      
+                  <Input style = {styles.inputs} label='password' onChangeText = {(text) => this.setState({password: text})}
+                  errorMessage = {this.state.errorPass}
+                  />
+                  
+                  <Button style = {styles.myButton} title = "Submit" onPress = {() =>  this.handleSubmit()} />
+                </View>
+      
+            </View>
+          </ApolloProvider>
+          );
+      break;
+      case 1:
+          return(
+            <ApolloProvider client = {client}>
+              <View style={styles.container}>
+                <Header
+                  leftComponent={{ icon: 'menu', color: '#fff' }}
+                  centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
+                  rightComponent={{ icon: 'home', color: '#fff' }}
+                />
+      
+                <View style={styles.view1}>
+      
+                </View>
+      
+                <View style={styles.view2}>
+      
+                  <Text style = {styles.taqText}> Bem vindo {this.state.activeUser.data.Login.user.name} </Text>
+      
+                </View>
+      
+            </View>
+          </ApolloProvider>
+          );
+      break;
 
-        <View style={styles.view1}>
-
-        </View>
-
-        <View style={styles.view2}>
-
-          <Text style = {styles.taqText}> Bem-vindo a Taqtile! </Text>
-
-          <Input style = {styles.inputs} label='e-mail' onChangeText = {(text) => this.setState({email: text})} 
-          errorMessage = {this.state.errorEmail}
-          />
-
-          <Input style = {styles.inputs} label='password' onChangeText = {(text) => this.setState({password: text})}
-          errorMessage = {this.state.errorPass}
-          />
-          
-          <Button style = {styles.myButton} title = "Submit" onPress = {() =>  this.handleSubmit()} />
-        </View>
-
-    </View>
-    );
+      default:
+        return null;
+    }
   }
 }
 
