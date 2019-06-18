@@ -27,17 +27,11 @@ export default class App extends React.Component {
   }
 
   verifyEmail(email){
-    if(email.match(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)){
-      return true;
-    }else{
-      return false;
-    }
+    const emailRegex = '/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/'; // Add email regex
+    return email && email.match(emailRegex);
   }
   
   handleSubmit(){
-    console.log("this.state.email: " + this.state.email);
-    console.log("this.state.password: " + this.state.password);
-
     if(!this.verifyEmail(this.state.email)){
       this.setState({errorEmail: "Invalid e-mail"});
     }else{
