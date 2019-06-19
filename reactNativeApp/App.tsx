@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import {Input , Button, Header, Text } from 'react-native-elements';
+import {Input , Button, Header, Text , ListItem } from 'react-native-elements';
 import ApolloClient from 'apollo-boost';
 import { gql } from "apollo-boost";
 import {ApolloProvider} from 'react-apollo';
@@ -10,6 +10,38 @@ const client = new ApolloClient({
   uri: "https://tq-template-server-sample.herokuapp.com/graphql ",
 });
 
+
+export default class UserList extends React.Component{
+  constructor(props){
+    super(props);
+    this.userList = [
+      {
+        name: "joao",
+        email: "joao@joao.com"
+      },
+      {
+        name: "henrique",
+        email: "henrique@henrique.com"
+      },
+    ];
+  }
+
+  render(){
+      
+    return(
+      this.userList.map((l, i) => (
+        <ListItem
+          key={i}
+          title={l.name}
+          subtitle={l.email}
+        />
+      ))
+    );
+
+        
+      
+  }
+}
 
 export default class App extends React.Component {
   constructor(props){
@@ -172,7 +204,33 @@ export default class App extends React.Component {
                 <View style={styles.view2}>
       
                   <Text style = {styles.taqText}> Bem vindo {this.state.activeUser.data.Login.user.name} </Text>
+                  <Button style = {styles.myButton} title = "See user list" onPress = {() =>  this.setState({page: 2})} />
+
       
+                </View>
+      
+            </View>
+          </ApolloProvider>
+          );
+      break;
+
+      case 2:
+          return(
+            <ApolloProvider client = {client}>
+              <View style={styles.container}>
+                <Header
+                  leftComponent={{ icon: 'menu', color: '#fff' }}
+                  centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
+                  rightComponent={{ icon: 'home', color: '#fff' }}
+                />
+      
+                <View style={styles.view1}>
+      
+                </View>
+      
+                <View style={styles.view2}>
+      
+                  <UserList/>
                 </View>
       
             </View>
