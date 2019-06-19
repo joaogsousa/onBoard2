@@ -4,6 +4,7 @@ import {Input , Button, Header, Text } from 'react-native-elements';
 import ApolloClient from 'apollo-boost';
 import { gql } from "apollo-boost";
 import {ApolloProvider} from 'react-apollo';
+import {AsyncStorage} from 'react-native';
 
 const client = new ApolloClient({
   uri: "https://tq-template-server-sample.herokuapp.com/graphql ",
@@ -20,6 +21,7 @@ export default class App extends React.Component {
       errorPass: "",
       token: "",
       page: 0,
+      loading: 0,
     }    
   }
 
@@ -82,15 +84,23 @@ export default class App extends React.Component {
     `;
     let loginResult;
     if(this.validateEmail(this.state.email) && this.verifyPass(this.state.password)){
+      this.setState({
+        loading: 1,
+      });
       client.mutate({
         mutation: myQuery,
       }).then(result => {
           // console.log("token" + result.data.Login.token);
           loginResult = result;
+          AsyncStorage.setItem('token', result.data.Login.token);
+          const retrievedToken =  AsyncStorage.getItem('token');
+          //console.log("token: ");
+          //console.log(retrievedToken);
           this.setState({
           token: loginResult.data.Login.token,
           activeUser: loginResult,
           page: 1,
+          loading: 0,
         });      
 
       }).catch(error => {
@@ -103,6 +113,7 @@ export default class App extends React.Component {
           page: 0,
           errorEmail: "Invalid user authentication",
           errorPass: "Invalid user authentication",
+          loading: 0,
         }); 
 
       });
@@ -137,7 +148,7 @@ export default class App extends React.Component {
                   errorMessage = {this.state.errorPass}
                   />
                   
-                  <Button style = {styles.myButton} title = "Submit" onPress = {() =>  this.handleSubmit()} />
+                  <Button style = {styles.myButton} loading = {this.state.loading == 1} title = "Submit" onPress = {() =>  this.handleSubmit()} />
                 </View>
       
             </View>
