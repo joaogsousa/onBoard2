@@ -21,16 +21,8 @@ let authClient;
 export default class UserList extends React.Component{
   constructor(props){
     super(props);
-    this.userList = [
-      {
-        name: "joao",
-        email: "joao@joao.com"
-      },
-      {
-        name: "henrique",
-        email: "henrique@henrique.com"
-      },
-    ];
+    
+
   }
 
   render(){
@@ -61,6 +53,7 @@ export default class App extends React.Component {
       token: "",
       page: 0,
       loading: 0,
+      currPage: 0,
     }    
   }
 
@@ -238,10 +231,14 @@ export default class App extends React.Component {
       case 2:
           const queryUsers = gql`
             query {
-              Users(limit: 7){
+              Users(limit: 6, offset: ${this.state.currPage * 5}){
                 nodes{
                   name
                   email
+                }
+                pageInfo{
+                  hasNextPage
+                  hasPreviousPage
                 }
               }
             }
@@ -272,7 +269,6 @@ export default class App extends React.Component {
       
                 </View>
       
-                <View style={styles.view2}>
 
                   <Query query={queryUsers}>
                     {({ loading, error, data }) => {
@@ -280,12 +276,23 @@ export default class App extends React.Component {
                       if (error) return(<Text style = {styles.taqText}> Error! </Text>);
 
                       return (
-                         <UserList list = {data.Users.nodes}/>
-                        
+                        <View style = {styles.view2}>
+
+                          <UserList list = {data.Users.nodes}/>
+
+                          <View style={styles.pagView}>
+                            <Button style = {styles.prev} disabled = {!data.Users.pageInfo.hasPreviousPage} title = "Prev" onPress = {() =>  this.setState({currPage: this.state.currPage - 1})} />
+                            <Button style = {styles.next} disabled = {!data.Users.pageInfo.hasNextPage} title = "Next" onPress = {() =>  this.setState({currPage: this.state.currPage + 1})} />
+                          </View>
+
+                        </View>
+
                       );
                     }}
                   </Query>
-                </View>
+                
+
+                
       
             </View>
           </ApolloProvider>
@@ -332,4 +339,17 @@ const styles = StyleSheet.create({
     marginRight: 25,
   },
 
+  pagView: {
+    flex: 0.5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  prev: {
+    flex: 1,
+    marginLeft: 25,
+  },
+  next: {
+    flex: 1,
+    marginLeft: 25,
+  },
 });
