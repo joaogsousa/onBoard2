@@ -1,15 +1,54 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import {Input , Button, Header, Text } from 'react-native-elements';
+import {Input , Button, Header, Text , ListItem } from 'react-native-elements';
 import ApolloClient from 'apollo-boost';
 import { gql } from "apollo-boost";
-import {ApolloProvider} from 'react-apollo';
+import {ApolloProvider, Query} from 'react-apollo';
 import {AsyncStorage} from 'react-native';
+import {graphql} from 'graphql';
+import { InMemoryCache } from 'apollo-boost';
+import { HttpLink } from 'apollo-link-http';
+
+
 
 const client = new ApolloClient({
   uri: "https://tq-template-server-sample.herokuapp.com/graphql ",
 });
 
+let authClient;
+
+
+export default class UserList extends React.Component{
+  constructor(props){
+    super(props);
+    this.userList = [
+      {
+        name: "joao",
+        email: "joao@joao.com"
+      },
+      {
+        name: "henrique",
+        email: "henrique@henrique.com"
+      },
+    ];
+  }
+
+  render(){
+      
+    return(
+      this.props.list.map((l, i) => (
+        <ListItem
+          key={i}
+          title={l.name}
+          subtitle={l.email}
+        />
+      ))
+    );
+
+        
+      
+  }
+}
 
 export default class App extends React.Component {
   constructor(props){
@@ -101,7 +140,21 @@ export default class App extends React.Component {
           activeUser: loginResult,
           page: 1,
           loading: 0,
-        });      
+        }); 
+        
+        authClient = new ApolloClient({
+          cache: new InMemoryCache({
+            addTypename: false
+          }),
+          uri: "https://tq-template-server-sample.herokuapp.com/graphql ",
+          request: operation => {
+            operation.setContext({
+              headers: {
+                authorization: loginResult.data.Login.token
+              }
+            });
+          }
+        });
 
       }).catch(error => {
         // console.log("erro do login mutate");
@@ -172,7 +225,66 @@ export default class App extends React.Component {
                 <View style={styles.view2}>
       
                   <Text style = {styles.taqText}> Bem vindo {this.state.activeUser.data.Login.user.name} </Text>
+                  <Button style = {styles.myButton} title = "See user list" onPress = {() =>  this.setState({page: 2})} />
+
       
+                </View>
+      
+            </View>
+          </ApolloProvider>
+          );
+      break;
+
+      case 2:
+          const queryUsers = gql`
+            query {
+              Users(limit: 7){
+                nodes{
+                  name
+                  email
+                }
+              }
+            }
+          `;
+
+          // const authorizedQuery = graphql(queryUsers, {
+          //   options: { 
+          //     context: { 
+          //       headers: { 
+          //         "authorization" : this.state.token  // this header will reach the server
+          //       } 
+          //     },
+          //     // ... other options  
+          //   }
+          // });
+
+          return(
+            <ApolloProvider client = {authClient}>
+              <View style={styles.container}>
+                <Header
+                  leftComponent={{ icon: 'menu', color: '#fff' }}
+                  centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
+                  rightComponent={{ icon: 'home', color: '#fff' }}
+                />
+      
+                <View style={styles.view1_2}>
+                  <Text style = {styles.taqText}> User List: </Text>
+      
+                </View>
+      
+                <View style={styles.view2}>
+
+                  <Query query={queryUsers}>
+                    {({ loading, error, data }) => {
+                      if (loading) return(<Text style = {styles.taqText}> Loading... </Text>);
+                      if (error) return(<Text style = {styles.taqText}> Error! </Text>);
+
+                      return (
+                         <UserList list = {data.Users.nodes}/>
+                        
+                      );
+                    }}
+                  </Query>
                 </View>
       
             </View>
@@ -193,6 +305,10 @@ const styles = StyleSheet.create({
   },
   view1: {
     flex:2,
+    // backgroundColor: "red",
+  },
+  view1_2: {
+    flex:0.5,
     // backgroundColor: "red",
   },
   view2: {
