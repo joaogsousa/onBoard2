@@ -8,6 +8,7 @@ import {AsyncStorage} from 'react-native';
 import {graphql} from 'graphql';
 import { InMemoryCache } from 'apollo-boost';
 import { HttpLink } from 'apollo-link-http';
+import UserScreen from 'UserScreen';
 
 
 
@@ -26,13 +27,17 @@ export default class UserList extends React.Component{
   }
 
   render(){
-      
+    
+    console.log("a list de users");
+    console.log(this.props.list);
+
     return(
       this.props.list.map((l, i) => (
         <ListItem
           key={i}
           title={l.name}
           subtitle={l.email}
+          onPress={() => this.props.listPress(l.id)}
         />
       ))
     );
@@ -67,7 +72,27 @@ export default class App extends React.Component {
       currPage: 0,
       statusAddUser: 0,
       idAddUser: -1,
+      userId: -1,
+      userToShow: "",
     }
+  }
+
+  goHome(){
+    this.setState({
+      page: 1,
+      currPage: 1,
+      statusAddUser: 0,
+      userToShow: -1,
+      idAddUser: -1,
+    });
+  }
+
+  listPress(id){
+    console.log("entrou list press");
+    this.setState({
+      page:5,
+      userToShow: id,
+    });
   }
 
   verifyPass(pass){
@@ -231,7 +256,7 @@ export default class App extends React.Component {
                 <Header
                   leftComponent={{ icon: 'menu', color: '#fff' }}
                   centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
-                  rightComponent={{ icon: 'home', color: '#fff' }}
+                  rightComponent={{ icon: 'home', color: '#fff',onPress: () => this.goHome() }}
                 />
       
                 <View style={styles.view1}>
@@ -264,7 +289,7 @@ export default class App extends React.Component {
                 <Header
                   leftComponent={{ icon: 'menu', color: '#fff' }}
                   centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
-                  rightComponent={{ icon: 'home', color: '#fff' }}
+                  rightComponent={{ icon: 'home', color: '#fff' ,onPress: () => this.goHome()}}
                 />
       
                 <View style={styles.view1}>
@@ -291,6 +316,7 @@ export default class App extends React.Component {
             query {
               Users(limit: 6, offset: ${this.state.currPage * 5}){
                 nodes{
+                  id
                   name
                   email
                 }
@@ -308,7 +334,7 @@ export default class App extends React.Component {
                 <Header
                   leftComponent={{ icon: 'menu', color: '#fff' }}
                   centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
-                  rightComponent={{ icon: 'home', color: '#fff' }}
+                  rightComponent={{ icon: 'home', color: '#fff' ,onPress: () => this.goHome() }}
                 />
       
                 <View style={styles.view1_2}>
@@ -331,7 +357,7 @@ export default class App extends React.Component {
                       return (
                         <View style = {styles.view2}>
 
-                          <UserList list = {data.Users.nodes}/>
+                          <UserList listPress={(id) => this.listPress(id)} list = {data.Users.nodes}/>
 
                           <View style={styles.pagView}>
                             <Button style = {styles.prev} disabled = {!data.Users.pageInfo.hasPreviousPage} title = "Prev" onPress = {() =>  this.setState({currPage: this.state.currPage - 1})} />
@@ -358,7 +384,7 @@ export default class App extends React.Component {
                 <Header
                   leftComponent={{ icon: 'menu', color: '#fff' }}
                   centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
-                  rightComponent={{ icon: 'home', color: '#fff' }}
+                  rightComponent={{ icon: 'home', color: '#fff' ,onPress: () => this.goHome() }}
                 />
       
       
@@ -412,7 +438,7 @@ export default class App extends React.Component {
                   <Header
                     leftComponent={{ icon: 'menu', color: '#fff' }}
                     centerComponent={{ text: 'onBoard APP', style: { color: '#fff' } }}
-                    rightComponent={{ icon: 'home', color: '#fff' }}
+                    rightComponent={{ icon: 'home', color: '#fff' ,onPress: () => this.goHome() }}
                   />
         
                   <View style={styles.view1_2}>
@@ -440,6 +466,13 @@ export default class App extends React.Component {
             </ApolloProvider>
             );
         break;
+
+        case 5:
+          console.log("userToShow: " + this.state.userToShow);
+          return(
+            <UserScreen client = {authClient} userId = {this.state.userToShow} goHome = {() => this.goHome()}> </UserScreen>
+          );
+          break;
 
 
       default:
